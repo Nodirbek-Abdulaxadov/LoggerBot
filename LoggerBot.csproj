@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -8,9 +8,22 @@
     <Authors>Nodirbek Abdulakhadov</Authors>
     <Company>MDevs Group</Company>
     <Description>Telegram Log via TelegramBot</Description>
+    <PackageProjectUrl>https://github.com/Nodirbek-Abdulaxadov/LoggerBot</PackageProjectUrl>
+    <PackageIcon>OIG2.jpg</PackageIcon>
+    <RepositoryUrl>https://github.com/Nodirbek-Abdulaxadov/LoggerBot</RepositoryUrl>
+    <PackageTags>#csharp #telegrambot #log</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="C:\Users\nbkab\Downloads\OIG2.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.1" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
   </ItemGroup>
 
