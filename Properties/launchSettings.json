@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "LoggerBot": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:63194;http://localhost:63195"
+    }
+  }
+}
