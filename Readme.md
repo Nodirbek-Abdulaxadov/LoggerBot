@@ -81,15 +81,15 @@ Example:
 ```
 
 ## Supported Log Types
-Error: Used for logging error messages.
+ * **Error:** Used for logging error messages.
 
-Info: Used for logging informational messages.
+ * **Info:** Used for logging informational messages.
 
-Success: Used for logging success messages.
+ * **Success:** Used for logging success messages.
 
-Warning: Used for logging warning messages.
+ * **Warning:** Used for logging warning messages.
 
-Message: Used for logging generic messages.
+ * **Message:** Used for logging generic messages.
 
 
 Feel free to expand upon this documentation with more details specific to your package's usage or additional features!
