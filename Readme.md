@@ -72,8 +72,21 @@ public class MyClass
 _The LoggerBot requires configuration settings to connect to your Telegram bot. Ensure the following configuration keys are present in your appsettings.json or environment variables:_
 
 **LoggerBot:Token:** The token of your Telegram bot.
+
 **LoggerBot:ChatId:** The ID of the Telegram chat where logs will be sent.
+
 **LoggerBot:TimeZone:** The time zone identifier used to format log timestamps.
+
+Example:
+```json
+
+"LoggerBot": {
+  "Token": "bot-token",
+  "ChatId": "-100chatId",
+  "TimeZone": "Asia/Tashkent"
+}
+
+```
 
 ## Supported Log Types
 Error: Used for logging error messages.
