@@ -19,16 +19,8 @@ First, configure LoggerBot in your application's startup code to register the lo
 ```csharp
 
 using LoggerBot;
-using LoggerBot.Services;
 
-public class Startup
-{
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddLoggerBot();
-    }
-}
-
+builder.Services.AddLoggerBot();
 ```
 
 2. Inject and Use LoggerService
