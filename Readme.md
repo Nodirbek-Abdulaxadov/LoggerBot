@@ -67,15 +67,12 @@ _The LoggerBot requires configuration settings to connect to your Telegram bot. 
 
 **LoggerBot:ChatId:** The ID of the Telegram chat where logs will be sent.
 
-**LoggerBot:TimeZone:** The time zone identifier used to format log timestamps.
-
 Example:
 ```json
 
 "LoggerBot": {
   "Token": "bot-token",
-  "ChatId": "-100chatId",
-  "TimeZone": "Asia/Tashkent"
+  "ChatId": "-100chatId"
 }
 
 ```

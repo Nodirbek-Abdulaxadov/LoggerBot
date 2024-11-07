@@ -8,6 +8,9 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
     public async Task ErrorAsync(string message)
         => await SendMessageAsync(message, LogType.Error);
 
+    public async Task ErrorAsync(Exception exception)
+        => await SendMessageAsync(exception, LogType.Error);
+
     public async Task InfoAsync(string message)
         => await SendMessageAsync(message, LogType.Info);
 
@@ -24,14 +27,15 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
     {
         await Task.Run(async () =>
         {
+            var now = DateTime.Now;
             text = logType switch 
             {
-                LogType.Error => $"**[❌ERROR]** {Now()}:\n\n{text}",
-                LogType.Info => $"**[ℹ️INFO]** {Now()}:\n\n{text}",
-                LogType.Warning => $"**[⚠️WARNING]** {Now()}:\n\n{text}",
-                LogType.Success => $"**[✅SUCCESS]** {Now()}:\n\n{text}",
-                LogType.Message => $"**[📩MESSAGE]** {Now()}:\n\n{text}",
-                _ => $"**[📩MESSAGE]** {Now()}:\n\n{text}"
+                LogType.Error => $"**[❌ERROR]** {now}:\n\n{text}",
+                LogType.Info => $"**[ℹ️INFO]** {now}:\n\n{text}",
+                LogType.Warning => $"**[⚠️WARNING]** {now}:\n\n{text}",
+                LogType.Success => $"**[✅SUCCESS]** {now}:\n\n{text}",
+                LogType.Message => $"**[📩MESSAGE]** {now}:\n\n{text}",
+                _ => $"**[📩MESSAGE]** {now}:\n\n{text}"
             };
 
             Message message = await botClient.SendTextMessageAsync(
@@ -42,11 +46,26 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
         }).ConfigureAwait(false);
     }
 
-    private string Now()
+    private async Task SendMessageAsync(Exception exception, LogType logType)
     {
-        var utcNow = DateTime.UtcNow;
-        var timeZone = TimeZoneInfo.FindSystemTimeZoneById(configuration["LoggerBot:TimeZone"]!);
-        return TimeZoneInfo.ConvertTimeFromUtc(utcNow, timeZone).ToString("HH:mm:ss dd/MM/yyyy");
+        await Task.Run(async () =>
+        {
+            string source = exception.StackTrace?.Split("\n")[0] ?? "";
+            string text = $"""
+            **[❌ERROR]** {DateTime.Now}:
+            
+            🛑{exception.GetType().Name}: {exception.Message}
+            Inner Exception: {exception.InnerException?.Message}
+            
+            🪲Source: {source}
+            """;
+
+            Message message = await botClient.SendTextMessageAsync(
+            chatId: chatId,
+            text: text,
+            parseMode: ParseMode.Markdown,
+            disableNotification: true);
+        }).ConfigureAwait(false);
     }
 
     private enum LogType
