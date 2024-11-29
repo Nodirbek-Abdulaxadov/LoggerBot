@@ -1,4 +1,7 @@
-﻿namespace LoggerBot.Services;
+﻿using System.Diagnostics;
+using System.Text;
+
+namespace LoggerBot.Services;
 
 public class LoggerService(IConfiguration configuration) : ILoggerService
 {
@@ -50,19 +53,41 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
     {
         await Task.Run(async () =>
         {
-            string source = exception.StackTrace?.Split("\n")[0] ?? "";
-            string text = $"""
-            **[❌ERROR]** {DateTime.Now}:
-            
-            🛑{exception.GetType().Name}: {exception.Message}
-            Inner Exception: {exception.InnerException?.Message}
-            
-            🪲Source: {source}
-            """;
+            var stackTrace = new StackTrace(exception, true);
+            string sourceLines = "";
+
+            // Include up to 5 lines of source information if available
+            var frames = stackTrace.GetFrames();
+            if (frames != null)
+            {
+                for (int i = 0; i < Math.Min(10, frames.Length); i++)
+                {
+                    var frame = frames[i];
+                    var fileName = frame.GetFileName();
+                    var lineNumber = frame.GetFileLineNumber();
+                    var methodName = frame.GetMethod()?.Name;
+
+                    if (!string.IsNullOrWhiteSpace(fileName) && lineNumber > 0)
+                    {
+                        sourceLines += $"\n    At {fileName}:{lineNumber} in {methodName}";
+                    }
+                }
+            }
+
+            StringBuilder stringBuilder = new();
+            stringBuilder.AppendLine($"**[❌ERROR]** {DateTime.Now}");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine($"\U0001f6d1{exception.GetType().Name}: {exception.Message}");
+            if(exception.InnerException is not null)
+            {
+                stringBuilder.AppendLine($"Inner Exception: {exception.InnerException?.Message}");
+            }
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine($"\U0001fab2Source: {sourceLines}");
 
             Message message = await botClient.SendTextMessageAsync(
             chatId: chatId,
-            text: text,
+            text: stringBuilder.ToString(),
             parseMode: ParseMode.Markdown,
             disableNotification: true);
         }).ConfigureAwait(false);
