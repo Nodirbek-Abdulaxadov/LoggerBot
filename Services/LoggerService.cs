@@ -11,6 +11,9 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
     public async Task ErrorAsync(string message, CancellationToken cancellationToken = default)
         => await SendMessageAsync(message, LogType.Error, cancellationToken);
 
+    public async Task ErrorAsync(string message, byte[] fileBytes, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(message, LogType.Error, cancellationToken, fileBytes);
+
     public async Task ErrorAsync(Exception exception, CancellationToken cancellationToken = default)
         => await SendMessageAsync(exception, LogType.Error, cancellationToken);
 
@@ -26,12 +29,12 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
     public async Task MessageAsync(string message, CancellationToken cancellationToken = default)
         => await SendMessageAsync(message, LogType.Message, cancellationToken);
 
-    private async Task SendMessageAsync(string text, LogType logType, CancellationToken cancellationToken = default)
+    private async Task SendMessageAsync(string text, LogType logType, CancellationToken cancellationToken = default, byte[]? fileBytes = null)
     {
         await Task.Run(async () =>
         {
             var now = DateTime.Now;
-            text = logType switch 
+            text = logType switch
             {
                 LogType.Error => $"**[❌ERROR]** {now}:\n\n{text}",
                 LogType.Info => $"**[ℹ️INFO]** {now}:\n\n{text}",
@@ -40,6 +43,21 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
                 LogType.Message => $"**[📩MESSAGE]** {now}:\n\n{text}",
                 _ => $"**[📩MESSAGE]** {now}:\n\n{text}"
             };
+
+            if (fileBytes is not null)
+            {
+                using var stream = new MemoryStream(fileBytes);
+                // upload file and reply message to file caption
+
+                Message messageWithFile = await botClient.SendDocumentAsync(
+                    chatId: chatId,
+                    document: new InputFileStream(stream, "requestData.json"),
+                    caption: text,
+                    parseMode: ParseMode.Markdown,
+                    disableNotification: true,
+                    cancellationToken: cancellationToken);
+                return;
+            }
 
             Message message = await botClient.SendTextMessageAsync(
             chatId: chatId,
@@ -84,7 +102,7 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
             }
             stringBuilder.AppendLine();
             stringBuilder.AppendLine($"\U0001f6d1{exception.GetType().Name}: {exception.Message}");
-            if(exception.InnerException is not null)
+            if (exception.InnerException is not null)
             {
                 stringBuilder.AppendLine($"Inner Exception: {exception.InnerException?.Message}");
             }

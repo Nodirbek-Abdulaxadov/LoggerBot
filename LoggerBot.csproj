@@ -13,7 +13,7 @@
     <RepositoryUrl>https://github.com/Nodirbek-Abdulaxadov/LoggerBot</RepositoryUrl>
     <PackageTags>#csharp #telegrambot #log</PackageTags>
     <PackageReadmeFile>Readme.md</PackageReadmeFile>
-    <Version>1.3.0</Version>
+    <Version>1.4.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
