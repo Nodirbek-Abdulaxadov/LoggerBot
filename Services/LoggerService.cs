@@ -8,25 +8,25 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
     private readonly TelegramBotClient botClient = new(configuration["LoggerBot:Token"]!);
     private readonly long chatId = long.Parse(configuration["LoggerBot:ChatId"]!);
 
-    public async Task ErrorAsync(string message)
-        => await SendMessageAsync(message, LogType.Error);
+    public async Task ErrorAsync(string message, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(message, LogType.Error, cancellationToken);
 
-    public async Task ErrorAsync(Exception exception)
-        => await SendMessageAsync(exception, LogType.Error);
+    public async Task ErrorAsync(Exception exception, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(exception, LogType.Error, cancellationToken);
 
-    public async Task InfoAsync(string message)
-        => await SendMessageAsync(message, LogType.Info);
+    public async Task InfoAsync(string message, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(message, LogType.Info, cancellationToken);
 
-    public async Task SuccessAsync(string message)
-        => await SendMessageAsync(message, LogType.Success);
+    public async Task SuccessAsync(string message, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(message, LogType.Success, cancellationToken);
 
-    public async Task WarningAsync(string message)
-        => await SendMessageAsync(message, LogType.Warning);
+    public async Task WarningAsync(string message, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(message, LogType.Warning, cancellationToken);
 
-    public async Task MessageAsync(string message)
-        => await SendMessageAsync(message, LogType.Message);
+    public async Task MessageAsync(string message, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(message, LogType.Message, cancellationToken);
 
-    private async Task SendMessageAsync(string text, LogType logType)
+    private async Task SendMessageAsync(string text, LogType logType, CancellationToken cancellationToken = default)
     {
         await Task.Run(async () =>
         {
@@ -45,11 +45,12 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
             chatId: chatId,
             text: text,
             parseMode: ParseMode.Markdown,
-            disableNotification: true);
+            disableNotification: true,
+            cancellationToken: cancellationToken);
         }).ConfigureAwait(false);
     }
 
-    private async Task SendMessageAsync(Exception exception, LogType logType)
+    private async Task SendMessageAsync(Exception exception, LogType logType, CancellationToken cancellationToken = default)
     {
         await Task.Run(async () =>
         {
@@ -76,6 +77,11 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
 
             StringBuilder stringBuilder = new();
             stringBuilder.AppendLine($"**[❌ERROR]** {DateTime.Now}");
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            if (string.IsNullOrEmpty(env))
+            {
+                stringBuilder.AppendLine($"Environment: {env}");
+            }
             stringBuilder.AppendLine();
             stringBuilder.AppendLine($"\U0001f6d1{exception.GetType().Name}: {exception.Message}");
             if(exception.InnerException is not null)
@@ -89,7 +95,8 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
             chatId: chatId,
             text: stringBuilder.ToString(),
             parseMode: ParseMode.Markdown,
-            disableNotification: true);
+            disableNotification: true,
+            cancellationToken: cancellationToken);
         }).ConfigureAwait(false);
     }
 

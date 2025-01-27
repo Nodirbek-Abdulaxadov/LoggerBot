@@ -2,10 +2,10 @@
 
 public interface ILoggerService
 {
-    Task ErrorAsync(Exception exception);
-    Task ErrorAsync(string message);
-    Task InfoAsync(string message);
-    Task WarningAsync(string message);
-    Task SuccessAsync(string message);
-    Task MessageAsync(string message);
+    Task ErrorAsync(Exception exception, CancellationToken cancellationToken = default);
+    Task ErrorAsync(string message, CancellationToken cancellationToken = default);
+    Task InfoAsync(string message, CancellationToken cancellationToken = default);
+    Task WarningAsync(string message, CancellationToken cancellationToken = default);
+    Task SuccessAsync(string message, CancellationToken cancellationToken = default);
+    Task MessageAsync(string message, CancellationToken cancellationToken = default);
 }
