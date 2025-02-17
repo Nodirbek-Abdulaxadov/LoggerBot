@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text;
-
-namespace LoggerBot.Services;
+﻿namespace LoggerBot.Services;
 
 public class LoggerService(IConfiguration configuration) : ILoggerService
 {
@@ -9,27 +6,30 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
     private readonly long chatId = long.Parse(configuration["LoggerBot:ChatId"]!);
 
     public async Task ErrorAsync(string message, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(message, LogType.Error, cancellationToken);
+        => await SendMessageAsync(message, LogType.Error, null, cancellationToken);
 
     public async Task ErrorAsync(string message, byte[] fileBytes, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(message, LogType.Error, cancellationToken, fileBytes);
+        => await SendMessageAsync(message, LogType.Error, fileBytes, cancellationToken);
 
     public async Task ErrorAsync(Exception exception, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(exception, LogType.Error, cancellationToken);
+        => await SendMessageAsync(exception, LogType.Error, false, cancellationToken);
+
+    public async Task ErrorAsync(Exception exception, bool detailed = false, CancellationToken cancellationToken = default)
+        => await SendMessageAsync(exception, LogType.Error, detailed, cancellationToken);
 
     public async Task InfoAsync(string message, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(message, LogType.Info, cancellationToken);
+        => await SendMessageAsync(message, LogType.Info, null, cancellationToken);
 
     public async Task SuccessAsync(string message, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(message, LogType.Success, cancellationToken);
+        => await SendMessageAsync(message, LogType.Success, null, cancellationToken);
 
     public async Task WarningAsync(string message, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(message, LogType.Warning, cancellationToken);
+        => await SendMessageAsync(message, LogType.Warning, null, cancellationToken);
 
     public async Task MessageAsync(string message, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(message, LogType.Message, cancellationToken);
+        => await SendMessageAsync(message, LogType.Message, null, cancellationToken);
 
-    private async Task SendMessageAsync(string text, LogType logType, CancellationToken cancellationToken = default, byte[]? fileBytes = null)
+    private async Task SendMessageAsync(string text, LogType logType, byte[]? fileBytes = null, CancellationToken cancellationToken = default)
     {
         await Task.Run(async () =>
         {
@@ -68,10 +68,27 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
         }).ConfigureAwait(false);
     }
 
-    private async Task SendMessageAsync(Exception exception, LogType logType, CancellationToken cancellationToken = default)
+    private async Task SendMessageAsync(Exception exception, LogType logType, bool detailed = false, CancellationToken cancellationToken = default)
     {
         await Task.Run(async () =>
         {
+            if (detailed)
+            {
+                var content = GetFullExceptionDetails(exception);
+                var bytes = Encoding.UTF8.GetBytes(content);
+                using var stream = new MemoryStream(bytes);
+                // upload file and reply message to file caption
+
+                Message messageWithFile = await botClient.SendDocumentAsync(
+                    chatId: chatId,
+                    document: new InputFileStream(stream, "requestData.json"),
+                    caption: exception.Message,
+                    parseMode: ParseMode.Markdown,
+                    disableNotification: true,
+                    cancellationToken: cancellationToken);
+                return;
+            }
+
             var stackTrace = new StackTrace(exception, true);
             string sourceLines = "";
 
@@ -116,6 +133,43 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
             disableNotification: true,
             cancellationToken: cancellationToken);
         }).ConfigureAwait(false);
+    }
+
+    public static string GetFullExceptionDetails(Exception ex)
+    {
+        if (ex == null) return string.Empty;
+
+        var sb = new StringBuilder();
+        sb.AppendLine("🔥 Exception Details:");
+
+        CollectExceptionDetails(ex, sb, 0);
+
+        return sb.ToString();
+    }
+
+    private static void CollectExceptionDetails(Exception ex, StringBuilder sb, int level)
+    {
+        if (ex == null) return;
+
+        string indent = new string(' ', level * 4); // Indent inner exceptions
+        sb.AppendLine($"{indent}📌 Message: {ex.Message}");
+        sb.AppendLine($"{indent}🔍 Type: {ex.GetType().FullName}");
+        sb.AppendLine($"{indent}📍 StackTrace: {ex.StackTrace}");
+
+        // Handle AggregateException separately (for Task and Parallel exceptions)
+        if (ex is AggregateException aggEx)
+        {
+            foreach (var inner in aggEx.InnerExceptions)
+            {
+                sb.AppendLine($"{indent}🔄 Aggregate Inner Exception:");
+                CollectExceptionDetails(inner, sb, level + 1);
+            }
+        }
+        else if (ex.InnerException != null)
+        {
+            sb.AppendLine($"{indent}➡ Inner Exception:");
+            CollectExceptionDetails(ex.InnerException, sb, level + 1);
+        }
     }
 
     private enum LogType
