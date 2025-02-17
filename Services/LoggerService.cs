@@ -1,17 +1,14 @@
 ﻿namespace LoggerBot.Services;
 
-public class LoggerService(IConfiguration configuration) : ILoggerService
+public partial class LoggerService(IConfiguration configuration) : ILoggerService
 {
     private readonly TelegramBotClient botClient = new(configuration["LoggerBot:Token"]!);
 
-    public async Task ErrorAsync(string message, string? projectName = null, CancellationToken cancellationToken = default)
+    public async Task ErrorMessageAsync(string message, string? projectName = null, CancellationToken cancellationToken = default)
         => await SendMessageAsync(message, LogType.Error, projectName, null, cancellationToken);
 
-    public async Task ErrorAsync(string message, byte[] fileBytes, string? projectName = null, CancellationToken cancellationToken = default)
+    public async Task ErrorAttachmentAsync(string message, byte[] fileBytes, string? projectName = null, CancellationToken cancellationToken = default)
         => await SendMessageAsync(message, LogType.Error, projectName, fileBytes, cancellationToken);
-
-    public async Task ErrorAsync(Exception exception, string? projectName = null, CancellationToken cancellationToken = default)
-        => await SendMessageAsync(exception, projectName, false, cancellationToken);
 
     public async Task ErrorAsync(Exception exception, string? projectName = null, bool detailed = false, CancellationToken cancellationToken = default)
         => await SendMessageAsync(exception, projectName, detailed, cancellationToken);
@@ -30,7 +27,7 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
 
     private async Task SendMessageAsync(string text, LogType logType, string? projectName = null, byte[]? fileBytes = null, CancellationToken cancellationToken = default)
     {
-        await Task.Run(async () =>
+        await Task.Run(() =>
         {
             var now = DateTime.Now;
             text = logType switch
@@ -45,46 +42,23 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
 
             if (fileBytes is not null)
             {
-                using var stream = new MemoryStream(fileBytes);
-                // upload file and reply message to file caption
-
-                Message messageWithFile = await botClient.SendDocumentAsync(
-                    chatId: GetChatId(projectName),
-                    document: new InputFileStream(stream, "requestData.json"),
-                    caption: text,
-                    parseMode: ParseMode.Markdown,
-                    disableNotification: true,
-                    cancellationToken: cancellationToken);
+                Add(new(GetChatId(projectName), text, true, fileBytes, cancellationToken));
                 return;
             }
 
-            Message message = await botClient.SendTextMessageAsync(
-                chatId: GetChatId(projectName),
-                text: text,
-                parseMode: ParseMode.Markdown,
-                disableNotification: true,
-                cancellationToken: cancellationToken);
-        }).ConfigureAwait(false);
+            Add(new(GetChatId(projectName), text, false, null, cancellationToken));
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task SendMessageAsync(Exception exception, string? projectName = null, bool detailed = false, CancellationToken cancellationToken = default)
     {
-        await Task.Run(async () =>
+        await Task.Run(() =>
         {
             if (detailed)
             {
                 var content = GetFullExceptionDetails(exception);
                 var bytes = Encoding.UTF8.GetBytes(content);
-                using var stream = new MemoryStream(bytes);
-                // upload file and reply message to file caption
-
-                Message messageWithFile = await botClient.SendDocumentAsync(
-                    chatId: GetChatId(projectName),
-                    document: new InputFileStream(stream, "requestData.json"),
-                    caption: exception.Message,
-                    parseMode: ParseMode.Markdown,
-                    disableNotification: true,
-                    cancellationToken: cancellationToken);
+                Add(new(GetChatId(projectName), exception.Message, true, bytes, cancellationToken));
                 return;
             }
 
@@ -125,13 +99,8 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
             stringBuilder.AppendLine();
             stringBuilder.AppendLine($"\U0001fab2Source: {sourceLines}");
 
-            Message message = await botClient.SendTextMessageAsync(
-                chatId: GetChatId(projectName),
-                text: stringBuilder.ToString(),
-                parseMode: ParseMode.Markdown,
-                disableNotification: true,
-                cancellationToken: cancellationToken);
-        }).ConfigureAwait(false);
+            Add(new(GetChatId(projectName), stringBuilder.ToString(), false, null, cancellationToken));
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     public static string GetFullExceptionDetails(Exception ex)
@@ -186,14 +155,5 @@ public class LoggerService(IConfiguration configuration) : ILoggerService
         {
             throw new InvalidOperationException("ChatId not found!");
         }
-    }
-
-    private enum LogType
-    {
-        Error,
-        Info,
-        Warning,
-        Success,
-        Message
     }
 }

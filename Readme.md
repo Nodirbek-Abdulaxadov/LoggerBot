@@ -12,7 +12,7 @@ dotnet add package LoggerBot
 
 ```
 
-## Usage
+# Basic Usage
 1. Configure LoggerBot
 First, configure LoggerBot in your application's startup code to register the logger service in the dependency injection container:
 
@@ -90,3 +90,51 @@ Example:
 
 
 Feel free to expand upon this documentation with more details specific to your package's usage or additional features!
+
+# Strong usage
+
+
+If you want to use multiple projects (chats), you can setup like this:
+```json
+
+"LoggerBot": {
+  "Token": "bot-token",
+  "Project1": "-100chatId1",
+  "Project2": "-100chatId2",
+  "Project3": "-100chatId3"
+  ...
+}
+
+```
+
+Additionaly you can catch fully detailed exceptions:
+
+```cshap
+using LoggerBot.Services;
+
+public class MyClass
+{
+    private readonly ILoggerService _logger;
+
+    public MyClass(ILoggerService logger)
+    {
+        _logger = logger;
+    }
+
+    public async Task SomeMethod()
+    {
+        try
+        {
+            //some code
+        }
+        catch(Exception exception)
+        {
+            //just message
+            await _logger.ErrorAsync("An error occurred.", "Project1");
+
+            //detailed message
+            await _logger.ErrorAsync(exception, "Project1", detailed: true);
+        }
+    }
+}
+```
