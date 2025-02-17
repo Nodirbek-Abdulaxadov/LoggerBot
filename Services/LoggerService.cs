@@ -58,7 +58,12 @@ public partial class LoggerService(IConfiguration configuration) : ILoggerServic
             {
                 var content = GetFullExceptionDetails(exception);
                 var bytes = Encoding.UTF8.GetBytes(content);
-                Add(new(GetChatId(projectName), exception.Message, true, bytes, cancellationToken));
+                var text = $"""
+                **[❌ERROR]** {DateTime.Now}
+
+                {exception.Message}
+                """;
+                Add(new(GetChatId(projectName), text, true, bytes, cancellationToken));
                 return;
             }
 
