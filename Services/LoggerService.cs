@@ -1,8 +1,19 @@
-﻿namespace LoggerBot.Services;
+using Microsoft.Extensions.Hosting;
 
-public partial class LoggerService(IConfiguration configuration) : ILoggerService
+namespace LoggerBot.Services;
+
+public partial class LoggerService : ILoggerService
 {
-    private readonly TelegramBotClient botClient = new(configuration["LoggerBot:Token"]!);
+    private readonly TelegramBotClient botClient;
+    private readonly IConfiguration configuration;
+    private readonly IHostEnvironment hostEnvironment;
+
+    public LoggerService(IConfiguration configuration, IHostEnvironment hostEnvironment)
+    {
+        botClient = new(configuration["LoggerBot:Token"]!);
+        this.configuration = configuration;
+        this.hostEnvironment = hostEnvironment;
+    }
 
     public async Task ErrorMessageAsync(string message, string? projectName = null, CancellationToken cancellationToken = default)
         => await SendMessageAsync(message, LogType.Error, projectName, null, cancellationToken);
@@ -58,11 +69,10 @@ public partial class LoggerService(IConfiguration configuration) : ILoggerServic
             {
                 var content = GetFullExceptionDetails(exception);
                 var bytes = Encoding.UTF8.GetBytes(content);
-                var text = $"""
-                **[❌ERROR]** {DateTime.Now}
+                var text = $@"**[❌ERROR]** {DateTime.Now}
 
-                {exception.Message}
-                """;
+                {exception.Message}";
+
                 Add(new(GetChatId(projectName), text, true, bytes, cancellationToken));
                 return;
             }
@@ -90,7 +100,7 @@ public partial class LoggerService(IConfiguration configuration) : ILoggerServic
 
             StringBuilder stringBuilder = new();
             stringBuilder.AppendLine($"**[❌ERROR]** {DateTime.Now}");
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+            var env = hostEnvironment.EnvironmentName;
             if (string.IsNullOrEmpty(env))
             {
                 stringBuilder.AppendLine($"Environment: {env}");
