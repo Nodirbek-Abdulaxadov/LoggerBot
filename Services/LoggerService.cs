@@ -43,12 +43,12 @@ public partial class LoggerService : ILoggerService
             var now = DateTime.Now;
             text = logType switch
             {
-                LogType.Error => $"**[❌ERROR]** {now}:\n\n{text}",
-                LogType.Info => $"**[ℹ️INFO]** {now}:\n\n{text}",
-                LogType.Warning => $"**[⚠️WARNING]** {now}:\n\n{text}",
-                LogType.Success => $"**[✅SUCCESS]** {now}:\n\n{text}",
-                LogType.Message => $"**[📩MESSAGE]** {now}:\n\n{text}",
-                _ => $"**[📩MESSAGE]** {now}:\n\n{text}"
+                LogType.Error => $"*[❌ERROR]* `{now}`\n\n{text}",
+                LogType.Info => $"*[ℹ️INFO]* `{now}`\n\n{text}",
+                LogType.Warning => $"*[⚠️WARNING]* `{now}`\n\n{text}",
+                LogType.Success => $"*[✅SUCCESS]* `{now}`\n\n{text}",
+                LogType.Message => $"*[📩MESSAGE]* `{now}`\n\n{text}",
+                _ => $"*[📩MESSAGE]* `{now}`:\n\n{text}"
             };
 
             if (fileBytes is not null)
@@ -69,7 +69,7 @@ public partial class LoggerService : ILoggerService
             {
                 var content = GetFullExceptionDetails(exception);
                 var bytes = Encoding.UTF8.GetBytes(content);
-                var text = $@"**[❌ERROR]** {DateTime.Now}
+                var text = $@"*[❌ERROR]* `{DateTime.Now}`
 
                 {exception.Message}";
 
@@ -99,7 +99,7 @@ public partial class LoggerService : ILoggerService
             }
 
             StringBuilder stringBuilder = new();
-            stringBuilder.AppendLine($"**[❌ERROR]** {DateTime.Now}");
+            stringBuilder.AppendLine($"*[❌ERROR]* `{DateTime.Now}`");
             var env = hostEnvironment.EnvironmentName;
             if (string.IsNullOrEmpty(env))
             {
